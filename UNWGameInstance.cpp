@@ -30,11 +30,6 @@ void UNWGameInstance::Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 N
 	SessionSettings->Set(SETTING_MAPNAME, FString("NewMap"), EOnlineDataAdvertisementType::ViaOnlineService);
 }
 
-void UNWGameInstance::Add_CreateSessionCompleteDelegate_Handle(IOnlineSessionPtr SessionInterface)
-{
-	OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
-}
-
 bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
 								  FName SessionName, bool bIsLAN,
 								  bool bIsPresence, int32 NumberOfPlayers)
@@ -48,7 +43,9 @@ bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
 		if (SessionInterface.IsValid() && UserId.IsValid())
 		{
 			Set_SessionSettings(bIsLAN, bIsPresence, NumberOfPlayers);
-			Add_CreateSessionCompleteDelegate_Handle(SessionInterface);
+
+			OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
+
 			return SessionInterface->CreateSession(*UserId, SessionName, *SessionSettings);
 		}
 	}
@@ -100,7 +97,6 @@ void UNWGameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSucc
 		UGameplayStatics::OpenLevel(GetWorld(), "CreatedSession", true, "listen");
 	}
 }
-/* End Create Session */
 
 
 
