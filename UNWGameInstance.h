@@ -32,6 +32,13 @@ private:
 	virtual void OnStartOnlineGameComplete(FName SessionName, bool bWasSuccessful);
 	/* End Create Session */
 
+	/* Destroy Session */
+	FOnDestroySessionCompleteDelegate OnDestroySessionCompleteDelegate;
+	FDelegateHandle OnDestroySessionCompleteDelegateHandle;
+
+	virtual void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+	/* End Destroy Session */
+
 public:
 	UNWGameInstance(const FObjectInitializer& ObjectInitializer);
 

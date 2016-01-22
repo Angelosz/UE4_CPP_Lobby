@@ -10,6 +10,9 @@ UNWGameInstance::UNWGameInstance(const FObjectInitializer& ObjectInitializer)
 		FOnCreateSessionCompleteDelegate::CreateUObject(this, &UNWGameInstance::OnCreateSessionComplete);
 	OnStartSessionCompleteDelegate = 
 		FOnStartSessionCompleteDelegate::CreateUObject(this, &UNWGameInstance::OnStartOnlineGameComplete);
+
+	OnDestroySessionCompleteDelegate =
+		FOnDestroySessionCompleteDelegate::CreateUObject(this, &UNWGameInstance::OnDestroySessionComplete);
 }
 /* Private */
 /* Create Session */
@@ -98,7 +101,26 @@ void UNWGameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSucc
 	}
 }
 
+/* Destroy Session */
+void UNWGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, FString::Printf(TEXT("Session Destroyed %s, %d"), *SessionName.ToString(), bWasSuccessful));
 
+	const auto OnlineSubsystem = IOnlineSubsystem::Get();
+	if(OnlineSubsystem)
+	{
+		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		if(SessionInterface.IsValid())
+		{
+			SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+
+			if(bWasSuccessful)
+			{
+				UGameplayStatics::OpenLevel(GetWorld(), "MainMenu", true);
+			}
+		}
+	}
+}
 
 
 /* Public */
@@ -109,3 +131,18 @@ void UNWGameInstance::StartSession(FName SessionName)
 	HostSession(Player->GetPreferredUniqueNetId(), SessionName, true, true, 2);
 }
 
+void UNWGameInstance::DestroySession(FName SessionName)
+{
+	const auto OnlineSubsystem = IOnlineSubsystem::Get();
+
+	if (OnlineSubsystem)
+	{
+		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		if (SessionInterface.IsValid())
+		{
+			OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+
+			SessionInterface->DestroySession(SessionName);
+		}
+	}
+}
