@@ -13,7 +13,11 @@ UNWGameInstance::UNWGameInstance(const FObjectInitializer& ObjectInitializer)
 
 	OnDestroySessionCompleteDelegate =
 		FOnDestroySessionCompleteDelegate::CreateUObject(this, &UNWGameInstance::OnDestroySessionComplete);
+
+	OnFindSessionsCompleteDelegate =
+		FOnFindSessionsCompleteDelegate::CreateUObject(this, &UNWGameInstance::OnFindSessionsComplete);
 }
+
 /* Private */
 /* Create Session */
 void UNWGameInstance::Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 NumberOfPlayers)
@@ -123,12 +127,83 @@ void UNWGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucce
 }
 
 
+/* Find Session */
+void UNWGameInstance::SetSearchSettings(bool bIsLAN, bool bIsPresence)
+{
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+
+	SessionSearch->bIsLanQuery = bIsLAN;
+	SessionSearch->MaxSearchResults = 20;
+	SessionSearch->PingBucketSize = 100;
+
+	if(bIsPresence)
+	{
+		SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, bIsPresence, EOnlineComparisonOp::Equals);
+	}
+}
+
+void UNWGameInstance::FindSessions(TSharedPtr<const FUniqueNetId> UserId, bool bIsLAN, bool bIsPresence)
+{
+	auto OnlineSubsystem = IOnlineSubsystem::Get();
+	if(OnlineSubsystem)
+	{
+		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		if(SessionInterface.IsValid() && UserId.IsValid())
+		{
+			SetSearchSettings(bIsLAN, bIsPresence);
+
+			auto SearchSettingsRef = SessionSearch.ToSharedRef();
+
+			OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
+
+			SessionInterface->FindSessions(*UserId, SearchSettingsRef);
+		}
+	}
+	else
+	{
+		OnFindSessionsComplete(false);
+	}
+}
+
+void UNWGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("Find Sessions, %d"), bWasSuccessful));
+
+	const auto OnlineSubsystem = IOnlineSubsystem::Get();
+	if(OnlineSubsystem)
+	{
+		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		if (SessionInterface.IsValid())
+		{
+			SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegateHandle);
+
+			if(bWasSuccessful)
+			{
+				auto NumberOfSessionsFound = SessionSearch->SearchResults.Num();
+
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Number of Sessions Found: %d"), NumberOfSessionsFound));
+
+				if (NumberOfSessionsFound > 0)
+				{
+					for (auto i = 0; i < NumberOfSessionsFound; i++)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green,
+														 FString::Printf(TEXT("Session Found: %s, %d"),
+																		 *(SessionSearch->SearchResults[i].Session.OwningUserName), i + 1));
+					}
+				}
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Finding End")));
+			}
+		}
+	}
+}
+
 /* Public */
 void UNWGameInstance::StartSession(FName SessionName)
 {
 	const auto Player = GetFirstGamePlayer();
 
-	HostSession(Player->GetPreferredUniqueNetId(), SessionName, true, true, 2);
+	HostSession(Player->GetPreferredUniqueNetId(), SessionName, true, true, 4);
 }
 
 void UNWGameInstance::DestroySession(FName SessionName)
@@ -145,4 +220,11 @@ void UNWGameInstance::DestroySession(FName SessionName)
 			SessionInterface->DestroySession(SessionName);
 		}
 	}
+}
+
+void UNWGameInstance::FindOnlineGames()
+{
+	const auto Player = GetFirstGamePlayer();
+
+	FindSessions(Player->GetPreferredUniqueNetId(), true, true);
 }
