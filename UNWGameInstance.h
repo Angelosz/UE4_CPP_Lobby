@@ -36,6 +36,7 @@ private:
 
 	virtual void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 	void SetSearchSettings(bool bIsLAN, bool bIsPresence);
+
 	/* Find Session */
 	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 
@@ -44,6 +45,14 @@ private:
 	FOnFindSessionsCompleteDelegate OnFindSessionsCompleteDelegate;
 	FDelegateHandle OnFindSessionsCompleteDelegateHandle;
 	void OnFindSessionsComplete(bool bWasSuccessful);
+
+	/* Join Session */
+	bool JoinSession(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, const FOnlineSessionSearchResult& SearchResult);
+
+	FOnJoinSessionCompleteDelegate OnJoinSessionCompleteDelegate;
+	FDelegateHandle OnJoinSessionCompleteDelegateHandle;
+	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
 
 public:
 	UNWGameInstance(const FObjectInitializer& ObjectInitializer);
@@ -56,4 +65,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
 	void FindOnlineGames();
+
+	UFUNCTION(BlueprintCallable, Category = "Online Session")
+	void JoinGame(FName SessionName);
 };

@@ -16,6 +16,9 @@ UNWGameInstance::UNWGameInstance(const FObjectInitializer& ObjectInitializer)
 
 	OnFindSessionsCompleteDelegate =
 		FOnFindSessionsCompleteDelegate::CreateUObject(this, &UNWGameInstance::OnFindSessionsComplete);
+
+	OnJoinSessionCompleteDelegate =
+		FOnJoinSessionCompleteDelegate::CreateUObject(this, &UNWGameInstance::OnJoinSessionComplete);
 }
 
 /* Private */
@@ -198,6 +201,53 @@ void UNWGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 	}
 }
 
+/* Join Session */
+bool UNWGameInstance::JoinSession(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, const FOnlineSessionSearchResult& SearchResult)
+{
+	auto bSuccess = false;
+	
+	auto OnlineSubsystem = IOnlineSubsystem::Get();
+	if (OnlineSubsystem)
+	{
+		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		if(SessionInterface.IsValid() && UserId.IsValid())
+		{
+			OnJoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
+
+			bSuccess = SessionInterface->JoinSession(*UserId, SessionName, SearchResult);
+		}
+	}
+
+	return bSuccess;
+}
+
+void UNWGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, FString::Printf(TEXT("Joined Session: %s, %d"), *SessionName.ToString(), static_cast<int32>(Result)));
+
+	auto OnlineSubsystem = IOnlineSubsystem::Get();
+	if(OnlineSubsystem)
+	{
+		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		if (SessionInterface.IsValid())
+		{
+			SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegateHandle);
+
+			const auto PlayerController = GetFirstLocalPlayerController();
+
+			FString TravelURL;
+
+			if(PlayerController && SessionInterface->GetResolvedConnectString(SessionName, TravelURL))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, FString::Printf(TEXT("Joined Session: %s, %d"), *TravelURL));
+
+				PlayerController->ClientTravel(TravelURL, TRAVEL_Absolute);
+			}
+		}
+	}
+}
+
+
 /* Public */
 void UNWGameInstance::StartSession(FName SessionName)
 {
@@ -227,4 +277,25 @@ void UNWGameInstance::FindOnlineGames()
 	const auto Player = GetFirstGamePlayer();
 
 	FindSessions(Player->GetPreferredUniqueNetId(), true, true);
+}
+
+void UNWGameInstance::JoinGame(FName SessionName)
+{
+	const auto Player = GetFirstGamePlayer();
+
+	FOnlineSessionSearchResult SearchResult;
+
+	if(SessionSearch->SearchResults.Num() > 0)
+	{
+		for (auto i = 0; i < SessionSearch->SearchResults.Num(); i++)
+		{
+			if(SessionSearch->SearchResults[i].Session.OwningUserId != Player->GetPreferredUniqueNetId())
+			{
+				SearchResult = SessionSearch->SearchResults[i];
+
+				JoinSession(Player->GetPreferredUniqueNetId(), SessionName, SearchResult);
+				break;
+			}
+		}
+	}
 }
