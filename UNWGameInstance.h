@@ -55,6 +55,9 @@ private:
 
 
 public:
+	UPROPERTY(BlueprintReadWrite, Category = "Online Session")
+	FName PlayerName;
+
 	UNWGameInstance(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
