@@ -73,6 +73,9 @@ public:
 	void DestroySession(FName SessionName);
 
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
+	void DestroyActualSession();
+
+	UFUNCTION(BlueprintCallable, Category = "Online Session")
 	void FindOnlineGames();
 
 	UFUNCTION(BlueprintCallable, Category = "Online Session")

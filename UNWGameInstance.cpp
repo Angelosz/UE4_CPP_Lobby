@@ -279,6 +279,22 @@ void UNWGameInstance::DestroySession(FName SessionName)
 	}
 }
 
+void UNWGameInstance::DestroyActualSession()
+{
+	const auto OnlineSubsystem = IOnlineSubsystem::Get();
+
+	if (OnlineSubsystem)
+	{
+		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		if (SessionInterface.IsValid())
+		{
+			OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+
+			SessionInterface->DestroySession(GameSessionName);
+		}
+	}
+}
+
 void UNWGameInstance::FindOnlineGames()
 {
 	const auto Player = GetFirstGamePlayer();
