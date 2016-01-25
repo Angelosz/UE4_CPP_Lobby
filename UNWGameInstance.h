@@ -11,6 +11,8 @@ class CPP_LOBBYSESSIONS_API UNWGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 private:
+	FName GameSessionName;
+
 	TSharedPtr<class FOnlineSessionSettings> SessionSettings;
 
 	/* Create Session */
@@ -55,11 +57,15 @@ private:
 
 
 public:
+	UNWGameInstance(const FObjectInitializer& ObjectInitializer);
+
 	UPROPERTY(BlueprintReadWrite, Category = "Online Session")
 	FName PlayerName;
 
-	UNWGameInstance(const FObjectInitializer& ObjectInitializer);
+	UFUNCTION(BlueprintCallable, Category = "Online Session")
+	FName GetGameSessionName() const;
 
+	/* Session Management */
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
 	void StartSession(FName SessionName);
 

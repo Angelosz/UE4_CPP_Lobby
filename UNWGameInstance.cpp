@@ -56,6 +56,7 @@ bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
 
 			OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
 
+			GameSessionName = SessionName;
 			return SessionInterface->CreateSession(*UserId, SessionName, *SessionSettings);
 		}
 	}
@@ -249,6 +250,12 @@ void UNWGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 
 
 /* Public */
+FName UNWGameInstance::GetGameSessionName() const
+{
+	return GameSessionName;
+}
+
+/* Session Management */
 void UNWGameInstance::StartSession(FName SessionName)
 {
 	const auto Player = GetFirstGamePlayer();
