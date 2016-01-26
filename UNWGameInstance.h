@@ -5,6 +5,7 @@
 #include "Engine/GameInstance.h"
 #include "UNWGameInstance.generated.h"
 
+#define SETTING_PASSWORD FName(TEXT("Password"))
 
 UCLASS()
 class CPP_LOBBYSESSIONS_API UNWGameInstance : public UGameInstance
@@ -16,7 +17,7 @@ private:
 	TSharedPtr<class FOnlineSessionSettings> SessionSettings;
 
 	/* Create Session */
-	void Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 NumberOfPlayers);
+	void Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 NumberOfPlayers, bool bHasPassword, FString Password);
 
 	bool HostSession(TSharedPtr<const FUniqueNetId> UserId,
 					FName SessionName,

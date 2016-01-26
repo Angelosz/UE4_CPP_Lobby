@@ -23,7 +23,7 @@ UNWGameInstance::UNWGameInstance(const FObjectInitializer& ObjectInitializer)
 
 /* Private */
 /* Create Session */
-void UNWGameInstance::Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 NumberOfPlayers)
+void UNWGameInstance::Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 NumberOfPlayers, bool bHasPassword, FString Password)
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 
@@ -37,6 +37,11 @@ void UNWGameInstance::Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 N
 	SessionSettings->bAllowJoinViaPresence = true;
 	SessionSettings->bAllowJoinViaPresenceFriendsOnly = false;
 
+	if(bHasPassword)
+	{
+		SessionSettings->Set(SETTING_PASSWORD, Password, EOnlineDataAdvertisementType::DontAdvertise);
+	}
+
 	SessionSettings->Set(SETTING_MAPNAME, FString("NewMap"), EOnlineDataAdvertisementType::ViaOnlineService);
 }
 
@@ -48,11 +53,11 @@ bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
 
 	if (OnlineSubsystem)
 	{
-		auto SessionInterface = OnlineSubsystem->GetSessionInterface();
+		const auto SessionInterface = OnlineSubsystem->GetSessionInterface();
 
 		if (SessionInterface.IsValid() && UserId.IsValid())
 		{
-			Set_SessionSettings(bIsLAN, bIsPresence, NumberOfPlayers);
+			Set_SessionSettings(bIsLAN, bIsPresence, NumberOfPlayers,true,  FString("Yolo"));
 
 			OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
 
