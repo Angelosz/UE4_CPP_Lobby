@@ -3,27 +3,29 @@
 #pragma once
 
 #include "Engine/GameInstance.h"
+#include "FSessionSettingsStruct.h"
 #include "UNWGameInstance.generated.h"
 
 #define SETTING_PASSWORD FName(TEXT("Password"))
+
+#define LEVEL_SESSION FName(TEXT("Session"))
+#define LEVEL_MAINMENU FName(TEXT("MainMenu"))
 
 UCLASS()
 class CPP_LOBBYSESSIONS_API UNWGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
+
 private:
 	FName GameSessionName;
 
 	TSharedPtr<class FOnlineSessionSettings> SessionSettings;
 
 	/* Create Session */
-	void Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 NumberOfPlayers, bool bHasPassword, FString Password);
+	void Set_SessionSettings(FSessionSettingsStruct& Settings);
 
 	bool HostSession(TSharedPtr<const FUniqueNetId> UserId,
-					FName SessionName,
-					bool bIsLan,
-					bool bIsPresence,
-					int32 NumberOfPlayers);
+					FName SessionName, FSessionSettingsStruct& Settings);
 	
 	FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;
 	FDelegateHandle OnCreateSessionCompleteDelegateHandle;
@@ -68,7 +70,7 @@ public:
 
 	/* Session Management */
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
-	void StartSession(FName SessionName);
+	void StartSession(FSessionSettingsStruct Settings, FName SessionName);
 
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
 	void DestroySession(FName SessionName);

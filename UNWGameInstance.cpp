@@ -23,13 +23,13 @@ UNWGameInstance::UNWGameInstance(const FObjectInitializer& ObjectInitializer)
 
 /* Private */
 /* Create Session */
-void UNWGameInstance::Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 NumberOfPlayers, bool bHasPassword, FString Password)
+void UNWGameInstance::Set_SessionSettings(FSessionSettingsStruct& Settings)
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 
-	SessionSettings->bIsLANMatch = bIsLAN;
-	SessionSettings->bUsesPresence = bIsPresence;
-	SessionSettings->NumPublicConnections = NumberOfPlayers;
+	SessionSettings->bIsLANMatch = Settings.bIsLAN;
+	SessionSettings->bUsesPresence = Settings.bIsPresence;
+	SessionSettings->NumPublicConnections = Settings.NumberOfPlayers;
 	SessionSettings->NumPrivateConnections = 0;
 	SessionSettings->bAllowInvites = true;
 	SessionSettings->bAllowJoinInProgress = true;
@@ -37,17 +37,16 @@ void UNWGameInstance::Set_SessionSettings(bool bIsLAN, bool bIsPresence, int32 N
 	SessionSettings->bAllowJoinViaPresence = true;
 	SessionSettings->bAllowJoinViaPresenceFriendsOnly = false;
 
-	if(bHasPassword)
+	if(Settings.bHasPassword)
 	{
-		SessionSettings->Set(SETTING_PASSWORD, Password, EOnlineDataAdvertisementType::DontAdvertise);
+		SessionSettings->Set(SETTING_PASSWORD, Settings.Password, EOnlineDataAdvertisementType::DontAdvertise);
 	}
 
 	SessionSettings->Set(SETTING_MAPNAME, FString("NewMap"), EOnlineDataAdvertisementType::ViaOnlineService);
 }
 
 bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
-								  FName SessionName, bool bIsLAN,
-								  bool bIsPresence, int32 NumberOfPlayers)
+								  FName SessionName, FSessionSettingsStruct& Settings)
 {
 	const auto OnlineSubsystem = IOnlineSubsystem::Get();
 
@@ -57,7 +56,7 @@ bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
 
 		if (SessionInterface.IsValid() && UserId.IsValid())
 		{
-			Set_SessionSettings(bIsLAN, bIsPresence, NumberOfPlayers,true,  FString("Yolo"));
+			Set_SessionSettings(Settings);
 
 			OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
 
@@ -110,7 +109,7 @@ void UNWGameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSucc
 
 	if(bWasSuccessful)
 	{
-		UGameplayStatics::OpenLevel(GetWorld(), "CreatedSession", true, "listen");
+		UGameplayStatics::OpenLevel(GetWorld(), LEVEL_SESSION, true, "listen");
 	}
 }
 
@@ -126,10 +125,10 @@ void UNWGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucce
 		if(SessionInterface.IsValid())
 		{
 			SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
-
+			
 			if(bWasSuccessful)
 			{
-				UGameplayStatics::OpenLevel(GetWorld(), "MainMenu", true);
+				UGameplayStatics::OpenLevel(GetWorld(), LEVEL_MAINMENU, true);
 			}
 		}
 	}
@@ -261,11 +260,11 @@ FName UNWGameInstance::GetGameSessionName() const
 }
 
 /* Session Management */
-void UNWGameInstance::StartSession(FName SessionName)
+void UNWGameInstance::StartSession(FSessionSettingsStruct Settings, FName SessionName)
 {
 	const auto Player = GetFirstGamePlayer();
 
-	HostSession(Player->GetPreferredUniqueNetId(), SessionName, true, true, 4);
+	HostSession(Player->GetPreferredUniqueNetId(), SessionName, Settings);
 }
 
 void UNWGameInstance::DestroySession(FName SessionName)
