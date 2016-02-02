@@ -4,12 +4,16 @@
 
 #include "Engine/GameInstance.h"
 #include "FSessionSettingsStruct.h"
+#include "SessionSearchResultStruct.h"
 #include "UNWGameInstance.generated.h"
 
 #define SETTING_PASSWORD FName(TEXT("Password"))
+#define SETTING_PARTYNAME FName(TEXT("Party Name"))
 
 #define LEVEL_SESSION FName(TEXT("Session"))
 #define LEVEL_MAINMENU FName(TEXT("MainMenu"))
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSearchCompleteDelegate, bool, bWasSuccessful);
 
 UCLASS()
 class CPP_LOBBYSESSIONS_API UNWGameInstance : public UGameInstance
@@ -54,6 +58,8 @@ private:
 	/* Join Session */
 	bool JoinSession(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, const FOnlineSessionSearchResult& SearchResult);
 
+	bool Get_SearchResultOf(FString OwningUserId, FOnlineSessionSearchResult& SearchResult);
+
 	FOnJoinSessionCompleteDelegate OnJoinSessionCompleteDelegate;
 	FDelegateHandle OnJoinSessionCompleteDelegateHandle;
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
@@ -81,6 +87,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
 	void FindOnlineGames();
 
+	UPROPERTY(BlueprintAssignable)
+	FOnSearchCompleteDelegate OnSearchCompleted;
+
+	UFUNCTION(BlueprintCallable, Category = "Online Session")
+	TArray<FSessionSearchResultStruct> GetSearchResultStructs() const;
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
 	void JoinGame(FName SessionName);
 };

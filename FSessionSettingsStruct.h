@@ -11,6 +11,9 @@ struct CPP_LOBBYSESSIONS_API FSessionSettingsStruct
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Settings")
+	FString PartyName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Settings")
 	bool bIsLAN;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Settings")

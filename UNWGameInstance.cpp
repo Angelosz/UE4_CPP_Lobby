@@ -27,6 +27,7 @@ void UNWGameInstance::Set_SessionSettings(FSessionSettingsStruct& Settings)
 {
 	SessionSettings = MakeShareable(new FOnlineSessionSettings());
 
+	SessionSettings->Set(SETTING_PARTYNAME, Settings.PartyName, EOnlineDataAdvertisementType::ViaOnlineService);
 	SessionSettings->bIsLANMatch = Settings.bIsLAN;
 	SessionSettings->bUsesPresence = Settings.bIsPresence;
 	SessionSettings->NumPublicConnections = Settings.NumberOfPlayers;
@@ -175,7 +176,7 @@ void UNWGameInstance::FindSessions(TSharedPtr<const FUniqueNetId> UserId, bool b
 
 void UNWGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("Find Sessions, %d"), bWasSuccessful));
+	OnSearchCompleted.Broadcast(bWasSuccessful);
 
 	const auto OnlineSubsystem = IOnlineSubsystem::Get();
 	if(OnlineSubsystem)
@@ -307,10 +308,24 @@ void UNWGameInstance::FindOnlineGames()
 }
 
 void UNWGameInstance::JoinGame(FName SessionName)
+TArray<FSessionSearchResultStruct> UNWGameInstance::GetSearchResultStructs() const
 {
-	const auto Player = GetFirstGamePlayer();
+	TArray<FSessionSearchResultStruct> Results;
+	for (auto result : SessionSearch->SearchResults)
+	{
+		FString OwningUserId = result.Session.OwningUserId->ToString();
+		FString PartyName;
+		result.Session.SessionSettings.Get(SETTING_PARTYNAME, PartyName);
+		auto NumberOfOpenConnections = result.Session.NumOpenPublicConnections;
+		auto bHasPassword = result.Session.SessionSettings.Settings.Contains(SETTING_PASSWORD);;
+		
 
-	FOnlineSessionSearchResult SearchResult;
+		FSessionSearchResultStruct resultStruct(OwningUserId, PartyName, NumberOfOpenConnections, bHasPassword);
+		Results.Add(resultStruct);
+	}
+
+	return Results;
+}
 
 	if(SessionSearch->SearchResults.Num() > 0)
 	{
