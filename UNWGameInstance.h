@@ -92,6 +92,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
 	TArray<FSessionSearchResultStruct> GetSearchResultStructs() const;
+
 	UFUNCTION(BlueprintCallable, Category = "Online Session")
-	void JoinGame(FName SessionName);
+	bool CheckPasswordForSessionOf(FString SessionOwnerUserId, FString Password);
+
+	UFUNCTION(BlueprintCallable, Category = "Online Session")
+	void JoinGame(FName SessionName, FString OwningUserName);
 };

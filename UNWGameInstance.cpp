@@ -40,7 +40,7 @@ void UNWGameInstance::Set_SessionSettings(FSessionSettingsStruct& Settings)
 
 	if(Settings.bHasPassword)
 	{
-		SessionSettings->Set(SETTING_PASSWORD, Settings.Password, EOnlineDataAdvertisementType::DontAdvertise);
+		SessionSettings->Set(SETTING_PASSWORD, Settings.Password, EOnlineDataAdvertisementType::ViaOnlineService);
 	}
 
 	SessionSettings->Set(SETTING_MAPNAME, FString("NewMap"), EOnlineDataAdvertisementType::ViaOnlineService);
@@ -185,29 +185,24 @@ void UNWGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 		if (SessionInterface.IsValid())
 		{
 			SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegateHandle);
-
-			if(bWasSuccessful)
-			{
-				auto NumberOfSessionsFound = SessionSearch->SearchResults.Num();
-
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Number of Sessions Found: %d"), NumberOfSessionsFound));
-
-				if (NumberOfSessionsFound > 0)
-				{
-					for (auto i = 0; i < NumberOfSessionsFound; i++)
-					{
-						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green,
-														 FString::Printf(TEXT("Session Found: %s, %d"),
-																		 *(SessionSearch->SearchResults[i].Session.OwningUserName), i + 1));
-					}
-				}
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Finding End")));
-			}
 		}
 	}
 }
 
 /* Join Session */
+bool UNWGameInstance::Get_SearchResultOf(FString OwningUserId, FOnlineSessionSearchResult& SearchResult)
+{
+	for (FOnlineSessionSearchResult Result : SessionSearch->SearchResults)
+	{
+		if (Result.Session.OwningUserId->ToString() == OwningUserId)
+		{
+			SearchResult = Result;
+			return true;
+		}
+	}
+	return false;
+}
+
 bool UNWGameInstance::JoinSession(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, const FOnlineSessionSearchResult& SearchResult)
 {
 	auto bSuccess = false;
@@ -307,7 +302,6 @@ void UNWGameInstance::FindOnlineGames()
 	FindSessions(Player->GetPreferredUniqueNetId(), true, true);
 }
 
-void UNWGameInstance::JoinGame(FName SessionName)
 TArray<FSessionSearchResultStruct> UNWGameInstance::GetSearchResultStructs() const
 {
 	TArray<FSessionSearchResultStruct> Results;
@@ -327,17 +321,36 @@ TArray<FSessionSearchResultStruct> UNWGameInstance::GetSearchResultStructs() con
 	return Results;
 }
 
-	if(SessionSearch->SearchResults.Num() > 0)
+bool UNWGameInstance::CheckPasswordForSessionOf(FString SessionOwnerUserId, FString Password)
+{
+	FOnlineSessionSearchResult SearchResult;
+	if (Get_SearchResultOf(SessionOwnerUserId, SearchResult))
 	{
-		for (auto i = 0; i < SessionSearch->SearchResults.Num(); i++)
+		FString SessionPassword;
+		if (SearchResult.Session.SessionSettings.Get(SETTING_PASSWORD, SessionPassword))
 		{
-			if(SessionSearch->SearchResults[i].Session.OwningUserId != Player->GetPreferredUniqueNetId())
+			if (SessionPassword == Password)
 			{
-				SearchResult = SessionSearch->SearchResults[i];
-
-				JoinSession(Player->GetPreferredUniqueNetId(), SessionName, SearchResult);
-				break;
+				return true;
 			}
+		}
+	}
+
+	return false;
+}
+
+void UNWGameInstance::JoinGame(FName SessionName, FString OwningUserId)
+{
+	const auto Player = GetFirstGamePlayer();
+
+	FOnlineSessionSearchResult SearchResult;
+
+	if (Get_SearchResultOf(OwningUserId, SearchResult))
+	{
+		FString hola = SearchResult.Session.OwningUserId->ToString();
+		if (SearchResult.Session.OwningUserId != Player->GetPreferredUniqueNetId())
+		{
+			JoinSession(Player->GetPreferredUniqueNetId(), SessionName, SearchResult);
 		}
 	}
 }
