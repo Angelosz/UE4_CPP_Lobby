@@ -42,8 +42,9 @@ void UNWGameInstance::Set_SessionSettings(FSessionSettingsStruct& Settings)
 	{
 		SessionSettings->Set(SETTING_PASSWORD, Settings.Password, EOnlineDataAdvertisementType::ViaOnlineService);
 	}
-
-	SessionSettings->Set(SETTING_MAPNAME, FString("NewMap"), EOnlineDataAdvertisementType::ViaOnlineService);
+	
+	MapName = FName(*Settings.MapName);
+	SessionSettings->Set(SETTING_MAPNAME, Settings.MapName, EOnlineDataAdvertisementType::ViaOnlineService);
 }
 
 bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
@@ -62,6 +63,7 @@ bool UNWGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId,
 			OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
 
 			GameSessionName = SessionName;
+
 			return SessionInterface->CreateSession(*UserId, SessionName, *SessionSettings);
 		}
 	}
@@ -110,7 +112,7 @@ void UNWGameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSucc
 
 	if(bWasSuccessful)
 	{
-		UGameplayStatics::OpenLevel(GetWorld(), LEVEL_SESSION, true, "listen");
+		UGameplayStatics::OpenLevel(GetWorld(), MapName, true, "listen");
 	}
 }
 
@@ -310,11 +312,13 @@ TArray<FSessionSearchResultStruct> UNWGameInstance::GetSearchResultStructs() con
 		FString OwningUserId = result.Session.OwningUserId->ToString();
 		FString PartyName;
 		result.Session.SessionSettings.Get(SETTING_PARTYNAME, PartyName);
-		auto NumberOfOpenConnections = result.Session.NumOpenPublicConnections;
-		auto bHasPassword = result.Session.SessionSettings.Settings.Contains(SETTING_PASSWORD);;
-		
+		auto NumberOfOpenConnections = result.Session.SessionSettings.NumPublicConnections;
+		auto NumberOfMaxConnections = result.Session.NumOpenPrivateConnections;
+		auto bHasPassword = result.Session.SessionSettings.Settings.Contains(SETTING_PASSWORD);
+		FString MapName;
+		result.Session.SessionSettings.Get(SETTING_MAPNAME, MapName);
 
-		FSessionSearchResultStruct resultStruct(OwningUserId, PartyName, NumberOfOpenConnections, bHasPassword);
+		FSessionSearchResultStruct resultStruct(OwningUserId, PartyName, NumberOfOpenConnections, NumberOfMaxConnections, bHasPassword, MapName);
 		Results.Add(resultStruct);
 	}
 
