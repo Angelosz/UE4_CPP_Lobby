@@ -10,7 +10,6 @@
 #define SETTING_PASSWORD FName(TEXT("Password"))
 #define SETTING_PARTYNAME FName(TEXT("Party Name"))
 
-#define LEVEL_SESSION FName(TEXT("Session"))
 #define LEVEL_MAINMENU FName(TEXT("MainMenu"))
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSearchCompleteDelegate, bool, bWasSuccessful);
@@ -21,6 +20,8 @@ class CPP_LOBBYSESSIONS_API UNWGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 private:
+	FName MapName;
+	
 	FName GameSessionName;
 
 	TSharedPtr<class FOnlineSessionSettings> SessionSettings;
