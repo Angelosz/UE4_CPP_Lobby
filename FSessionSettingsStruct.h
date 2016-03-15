@@ -28,6 +28,9 @@ struct CPP_LOBBYSESSIONS_API FSessionSettingsStruct
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Settings")
 	FString Password;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Session Settings")
+	FString MapName;
+
 	FSessionSettingsStruct()
 	{
 		bIsLAN = false;
@@ -35,5 +38,6 @@ struct CPP_LOBBYSESSIONS_API FSessionSettingsStruct
 		NumberOfPlayers = 4;
 		bHasPassword = false;
 		Password = FString(TEXT("password"));
+		MapName = "TestMap2";
 	}
 };
